@@ -40,9 +40,10 @@ public class Project {
     @JsonIgnoreProperties({"project", "createdBy", "assignedTo"})
     private List<Task> tasks = new ArrayList<>();
 
-    @OneToMany(mappedBy = "project")
-    @JsonIgnoreProperties({"project"})
-    private List<Team> members = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    @JsonIgnoreProperties("members")
+    private Team team;
 
     private String slackWebhookUrl;
     private String slackBotToken;
@@ -117,9 +118,13 @@ public class Project {
     { 
         return tasks; 
     }
-    public List<Team> getMembers() 
-    { 
-        return members; 
+    public Team getTeam()
+    {
+        return team;
+    }
+    public void setTeam(Team team)
+    {
+        this.team = team;
     }
     public String getSlackWebhookUrl()
     {

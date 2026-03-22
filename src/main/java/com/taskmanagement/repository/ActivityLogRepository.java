@@ -7,8 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-
 public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> {
 
 
@@ -26,6 +24,7 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
            countQuery = "SELECT COUNT(a) FROM ActivityLog a WHERE a.task.id = :taskId")
     Page<ActivityLog> findStatusHistoryByTaskId(@Param("taskId") Long taskId, Pageable pageable);
 
-    @Query("SELECT a FROM ActivityLog a JOIN FETCH a.user ORDER BY a.createdAt DESC")
-    List<ActivityLog> findRecentLogs(Pageable pageable);
+    @Query(value = "SELECT a FROM ActivityLog a JOIN FETCH a.user ORDER BY a.createdAt DESC",
+           countQuery = "SELECT COUNT(a) FROM ActivityLog a")
+    Page<ActivityLog> findRecentLogs(Pageable pageable);
 }

@@ -1,78 +1,39 @@
 package com.taskmanagement.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(
-    name = "teams",
-    indexes = {
-        @Index(name = "idx_team_project", columnList = "project_id"),
-        @Index(name = "idx_team_user", columnList = "user_id"),
-        @Index(name = "idx_team_role", columnList = "role"),
-        @Index(name = "idx_team_project_user", columnList = "project_id, user_id")
-    }
-)
+@Table(name = "teams")
 public class Team {
+
+    public enum TeamRole { ADMIN, DEVELOPER }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "project_id")
-    @JsonBackReference
-    private Project project;
+    private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties({"projects", "password"})
-    private User user;
-
-    @Enumerated(EnumType.STRING)
-    private TeamRole role;
-
-    private LocalDateTime joinedAt;
-
-    public Team() {
-        this.joinedAt = LocalDateTime.now();
-    }
-
-    public enum TeamRole {
-        ADMIN, DEVELOPER
-    }
+    @OneToMany(mappedBy = "team")
+    @JsonIgnoreProperties("team")
+    private List<TeamMember> members = new ArrayList<>();
 
     public Long getId() {
         return id;
     }
 
-    public Project getProject() {
-        return project;
+    public String getName() {
+        return name;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public TeamRole getRole() {
-        return role;
-    }
-
-    public void setRole(TeamRole role) {
-        this.role = role;
-    }
-
-    public LocalDateTime getJoinedAt() {
-        return joinedAt;
+    public List<TeamMember> getMembers() {
+        return members;
     }
 }

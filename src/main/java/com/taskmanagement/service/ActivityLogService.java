@@ -13,8 +13,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 public class ActivityLogService {
 
@@ -27,9 +25,9 @@ public class ActivityLogService {
     @Autowired
     private TaskRepository taskRepository;
 
-    public List<ActivityLog> getAllLogs() {
+    public Page<ActivityLog> getAllLogs(int page, int size) {
         return activityLogRepository.findRecentLogs(
-                PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt")));
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     }
 
     public Page<ActivityLog> getLogsByUser(Long userId, int page, int size) {

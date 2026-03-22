@@ -16,7 +16,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     long countByStatus(Task.Status status);
 
-    @Query("SELECT COUNT(t) FROM Task t JOIN Team tm ON tm.project = t.project WHERE tm.user.id = :userId AND t.status = :status")
+    @Query("SELECT COUNT(t) FROM Task t JOIN TeamMember tm ON tm.team = t.project.team WHERE tm.user.id = :userId AND t.status = :status")
     long countByStatusAndUserId(Task.Status status, Long userId);
 
     @Query("SELECT t.status, COUNT(t) FROM Task t GROUP BY t.status")

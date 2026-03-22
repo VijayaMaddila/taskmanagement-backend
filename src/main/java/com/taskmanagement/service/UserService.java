@@ -1,7 +1,6 @@
 package com.taskmanagement.service;
 
 
-import org.springframework.data.domain.Pageable;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +8,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.taskmanagement.dto.ChangePasswordDto;
 import com.taskmanagement.dto.LoginDto;
+import com.taskmanagement.dto.ProfileDto;
 import com.taskmanagement.dto.RegisterDto;
 import com.taskmanagement.model.User;
 import com.taskmanagement.repository.UserRepository;
@@ -46,7 +47,7 @@ public class UserService {
 	public Map<String, Object> loginAndGetToken(LoginDto login) {
 	    User user = userRepository.findByEmail(login.getEmail());
 
-	    if (user == null) {
+	    if (user == null || user.isIs_deleted()) {
 	        throw new RuntimeException("User not found");
 	    }
 
@@ -64,14 +65,13 @@ public class UserService {
 	    );
 	}
 	public Page<User> getAllUsers(int page, int size) {
-
-	    Pageable pageable = PageRequest.of(page, size);
-
-	    return userRepository.findAll(pageable);
+	    return userRepository.findActiveUsers(PageRequest.of(page, size));
 	}
 	public User getUserById(Long id) {
-		User user=userRepository.findById(id).orElseThrow(()->new RuntimeException("User not found: "+id));
-		
+		User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found: " + id));
+		if (user.isIs_deleted()) {
+			throw new RuntimeException("User not found: " + id);
+		}
 		return user;
 	}
 	public User updateUser(User user, Long id) {
@@ -91,6 +91,37 @@ public class UserService {
 		userRepository.save(user);
 	}
 
-	
+	public User getProfile(String email) {
+		User user = userRepository.findByEmail(email);
+		if (user == null || user.isIs_deleted()) {
+			throw new RuntimeException("User not found");
+		}
+		return user;
+	}
+
+	public User updateProfile(String email, ProfileDto dto) {
+		User user = userRepository.findByEmail(email);
+		if (user == null || user.isIs_deleted()) {
+			throw new RuntimeException("User not found");
+		}
+		if (!user.getEmail().equals(dto.getEmail()) && userRepository.existsByEmail(dto.getEmail())) {
+			throw new RuntimeException("Email already in use");
+		}
+		user.setUsername(dto.getUsername());
+		user.setEmail(dto.getEmail());
+		return userRepository.save(user);
+	}
+
+	public void changePassword(String email, ChangePasswordDto dto) {
+		User user = userRepository.findByEmail(email);
+		if (user == null || user.isIs_deleted()) {
+			throw new RuntimeException("User not found");
+		}
+		if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
+			throw new RuntimeException("Current password is incorrect");
+		}
+		user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+		userRepository.save(user);
+	}
 
 }

@@ -77,14 +77,12 @@ public class TaskService {
     private void mapDtoToTask(TaskDto dto, Task task) {
         task.setTitle(dto.getTitle());
         task.setDescription(dto.getDescription());
-        if (dto.getStatus() != null) 
-            {
-                task.setStatus(dto.getStatus());
-            }
-        if (dto.getPriority() != null) 
-            {
-                task.setPriority(dto.getPriority());
-            }
+        if (dto.getStatus() != null) {
+            task.setStatus(dto.getStatus());
+        }
+        if (dto.getPriority() != null) {
+            task.setPriority(dto.getPriority());
+        }
         task.setDueDate(dto.getDueDate());
 
         if (dto.getProjectId() != null) {

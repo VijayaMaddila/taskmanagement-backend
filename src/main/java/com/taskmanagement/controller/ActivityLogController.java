@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/activity")
@@ -20,8 +19,10 @@ public class ActivityLogController {
 
     //get all logs
     @GetMapping
-    public ResponseEntity<List<ActivityLog>> getAllLogs() {
-        return ResponseEntity.ok(activityLogService.getAllLogs());
+    public ResponseEntity<Page<ActivityLog>> getAllLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(activityLogService.getAllLogs(page, size));
     }
 
     //get all logs by userid

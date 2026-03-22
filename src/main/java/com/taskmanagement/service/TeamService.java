@@ -2,15 +2,13 @@ package com.taskmanagement.service;
 
 import com.taskmanagement.dto.InviteDto;
 import com.taskmanagement.dto.TeamDto;
-import com.taskmanagement.model.Project;
-import com.taskmanagement.model.ProjectInvite;
-import com.taskmanagement.model.Team;
-import com.taskmanagement.model.User;
-import com.taskmanagement.repository.ProjectInviteRepository;
-import com.taskmanagement.repository.ProjectRepository;
-import com.taskmanagement.repository.TeamRepository;
-import com.taskmanagement.repository.UserRepository;
+import com.taskmanagement.dto.TeamMemberDto;
+import com.taskmanagement.model.*;
+import com.taskmanagement.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +22,9 @@ public class TeamService {
     private TeamRepository teamRepository;
 
     @Autowired
+    private TeamMemberRepository teamMemberRepository;
+
+    @Autowired
     private ProjectRepository projectRepository;
 
     @Autowired
@@ -35,37 +36,56 @@ public class TeamService {
     @Autowired
     private EmailService emailService;
 
-    //Team members
+    // Team CRUD
 
-    public Team addMember(TeamDto dto) {
-        Project project = projectRepository.findById(dto.getProjectId())
-                .orElseThrow(() -> new RuntimeException("Project not found: " + dto.getProjectId()));
-        User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found: " + dto.getUserId()));
-
+    public Team createTeam(TeamDto dto) {
         Team team = new Team();
-        team.setProject(project);
-        team.setUser(user);
-        team.setRole(dto.getRole());
+        team.setName(dto.getName());
         return teamRepository.save(team);
     }
 
-    public List<Team> getMembersByProject(Long projectId) {
-        return teamRepository.findByProjectId(projectId);
+    public Team getTeamById(Long id) {
+        return teamRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Team not found: " + id));
     }
 
-    public void removeMember(Long teamId) {
-        teamRepository.deleteById(teamId);
+    // Team Members
+
+    public TeamMember addMember(TeamMemberDto dto) {
+        Team team = teamRepository.findById(dto.getTeamId())
+                .orElseThrow(() -> new RuntimeException("Team not found: " + dto.getTeamId()));
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found: " + dto.getUserId()));
+
+        TeamMember member = new TeamMember();
+        member.setTeam(team);
+        member.setUser(user);
+        member.setRole(dto.getRole());
+        return teamMemberRepository.save(member);
     }
 
-    //Invites
+    public Page<TeamMember> getMembersByTeam(Long teamId, int page, int size) {
+        return teamMemberRepository.findByTeamId(teamId,
+                PageRequest.of(page, size, Sort.by("joinedAt").descending()));
+    }
 
-    //Create a ProjectInvite and send an email with the invite token. 
+    public Page<TeamMember> getMembersByProject(Long projectId, int page, int size) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));
+        if (project.getTeam() == null) throw new RuntimeException("No team assigned to project: " + projectId);
+        return getMembersByTeam(project.getTeam().getId(), page, size);
+    }
+
+    public void removeMember(Long memberId) {
+        teamMemberRepository.deleteById(memberId);
+    }
+
+    // Invites
+
     public ProjectInvite sendInvite(InviteDto dto) {
         Project project = projectRepository.findById(dto.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found: " + dto.getProjectId()));
 
-        // If a pending invite already exists, resend the email with the existing token
         List<ProjectInvite> existing = projectInviteRepository.findByEmail(dto.getEmail());
         ProjectInvite pendingInvite = existing.stream()
                 .filter(i -> i.getProject().getId().equals(dto.getProjectId()) &&
@@ -75,9 +95,7 @@ public class TeamService {
         if (pendingInvite != null) {
             try {
                 emailService.sendProjectInvite(pendingInvite.getEmail(), project.getName(), pendingInvite.getToken());
-            } catch (Exception e) {
-                
-            }
+            } catch (Exception e) { }
             return pendingInvite;
         }
 
@@ -87,19 +105,15 @@ public class TeamService {
         invite.setRole(dto.getRole());
         invite.setToken(UUID.randomUUID().toString());
         invite.setStatus(ProjectInvite.InviteStatus.PENDING);
-
         projectInviteRepository.save(invite);
 
         try {
             emailService.sendProjectInvite(invite.getEmail(), project.getName(), invite.getToken());
-        } catch (Exception e) {
-        
-        }
+        } catch (Exception e) { }
 
         return invite;
     }
 
-    // Accept a pending invite and add the user to the team. 
     public void acceptInvite(String token, Long userId) {
         ProjectInvite invite = projectInviteRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid invite token"));
@@ -111,17 +125,19 @@ public class TeamService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-        Team team = new Team();
-        team.setProject(invite.getProject());
-        team.setUser(user);
-        team.setRole(invite.getRole());
-        teamRepository.save(team);
+        Project project = invite.getProject();
+        if (project.getTeam() != null) {
+            TeamMember member = new TeamMember();
+            member.setTeam(project.getTeam());
+            member.setUser(user);
+            member.setRole(invite.getRole());
+            teamMemberRepository.save(member);
+        }
 
         invite.setStatus(ProjectInvite.InviteStatus.ACCEPTED);
         projectInviteRepository.save(invite);
     }
 
-    // Decline a pending invite.
     public void declineInvite(String token) {
         ProjectInvite invite = projectInviteRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid invite token"));
@@ -145,10 +161,13 @@ public class TeamService {
         );
     }
 
-    public List<ProjectInvite> getPendingInvites(Long projectId) {
-        return projectInviteRepository.findByProjectId(projectId);
+    public Page<ProjectInvite> getPendingInvites(Long projectId, int page, int size) {
+        return projectInviteRepository.findByProjectId(projectId,
+                PageRequest.of(page, size, Sort.by("createdAt").descending()));
     }
-    public List<ProjectInvite> getInvitesByEmail(String email) {
-        return projectInviteRepository.findByEmail(email);
+
+    public Page<ProjectInvite> getInvitesByEmail(String email, int page, int size) {
+        return projectInviteRepository.findByEmail(email,
+                PageRequest.of(page, size, Sort.by("createdAt").descending()));
     }
 }

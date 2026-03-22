@@ -11,38 +11,40 @@ public class ProjectDto {
     private LocalDate startDate;
     private LocalDate endDate;
     private Long createdById;
+    private Long teamId;
     private List<MemberInvite> members;
     private String slackWebhookUrl;
     private String slackBotToken;
 
     public static class MemberInvite {
-        private Long userId;   
-        private String email;  
+        private Long userId;
+        private String email;
+        private String name;
         private Team.TeamRole role;
 
-        public Long getUserId() 
-        { 
-            return userId; 
+        public Long getUserId() {
+            return userId;
         }
-        public void setUserId(Long userId) 
-        { 
-            this.userId = userId; 
+        public void setUserId(Long userId) {
+            this.userId = userId;
         }
-        public String getEmail() 
-        { 
-            return email; 
+        public String getEmail() {
+            return email;
         }
-        public void setEmail(String email) 
-        { 
-            this.email = email; 
+        public void setEmail(String email) {
+            this.email = email;
         }
-        public Team.TeamRole getRole()
-         { 
-            return role; 
+        public String getName() {
+            return name;
         }
-        public void setRole(Team.TeamRole role) 
-        { 
-            this.role = role; 
+        public void setName(String name) {
+            this.name = name;
+        }
+        public Team.TeamRole getRole() {
+            return role;
+        }
+        public void setRole(Team.TeamRole role) {
+            this.role = role;
         }
     }
 
@@ -78,13 +80,21 @@ public class ProjectDto {
     { 
         this.endDate = endDate; 
     }
-    public Long getCreatedById() 
-    { 
-        return createdById; 
+    public Long getCreatedById()
+    {
+        return createdById;
     }
-    public void setCreatedById(Long createdById) 
-    { 
-        this.createdById = createdById; 
+    public void setCreatedById(Long createdById)
+    {
+        this.createdById = createdById;
+    }
+    public Long getTeamId()
+    {
+        return teamId;
+    }
+    public void setTeamId(Long teamId)
+    {
+        this.teamId = teamId;
     }
     public List<MemberInvite> getMembers()
     {

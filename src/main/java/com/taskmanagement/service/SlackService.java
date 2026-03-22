@@ -154,6 +154,112 @@ public class SlackService {
         send(payload, task.getProject().getSlackWebhookUrl());
     }
 
+    //Comment Added
+
+    public void notifyCommentAdded(com.taskmanagement.model.Comment comment) {
+        if (comment.getTask() == null || comment.getTask().getProject() == null) return;
+        if (comment.getTask().getProject().getSlackWebhookUrl() == null) return;
+
+        String user    = comment.getUser() != null ? comment.getUser().getUsername() : "Unknown";
+        String task    = comment.getTask().getTitle();
+        String project = comment.getTask().getProject().getName();
+        String content = comment.getContent();
+
+        String payload = attachment(
+            "#2eb886",
+            "New Comment Added",
+            "A comment was added on *" + e(project) + "*",
+            e(task),
+            fields(
+                field("Project",    e(project), true),
+                field("Task",       e(task),    true),
+                field("Commented By", e(user),  true),
+                field("Comment",    e(content), false)
+            )
+        );
+
+        send(payload, comment.getTask().getProject().getSlackWebhookUrl());
+    }
+
+    //Comment Updated
+
+    public void notifyCommentUpdated(com.taskmanagement.model.Comment comment, String oldContent) {
+        if (comment.getTask() == null || comment.getTask().getProject() == null) return;
+        if (comment.getTask().getProject().getSlackWebhookUrl() == null) return;
+
+        String user    = comment.getUser() != null ? comment.getUser().getUsername() : "Unknown";
+        String task    = comment.getTask().getTitle();
+        String project = comment.getTask().getProject().getName();
+
+        String payload = attachment(
+            "#f0a500",
+            "Comment Updated",
+            "A comment was edited on *" + e(project) + "*",
+            e(task),
+            fields(
+                field("Project",     e(project),    true),
+                field("Task",        e(task),        true),
+                field("Updated By",  e(user),        true),
+                field("Old Comment", e(oldContent),  false),
+                field("New Comment", e(comment.getContent()), false)
+            )
+        );
+
+        send(payload, comment.getTask().getProject().getSlackWebhookUrl());
+    }
+
+    //Comment Deleted
+
+    public void notifyCommentDeleted(com.taskmanagement.model.Comment comment) {
+        if (comment.getTask() == null || comment.getTask().getProject() == null) return;
+        if (comment.getTask().getProject().getSlackWebhookUrl() == null) return;
+
+        String user    = comment.getUser() != null ? comment.getUser().getUsername() : "Unknown";
+        String task    = comment.getTask().getTitle();
+        String project = comment.getTask().getProject().getName();
+
+        String payload = attachment(
+            "#e11d48",
+            "Comment Deleted",
+            "A comment was removed from *" + e(project) + "*",
+            e(task),
+            fields(
+                field("Project",    e(project), true),
+                field("Task",       e(task),    true),
+                field("Deleted By", e(user),    true),
+                field("Comment",    e(comment.getContent()), false)
+            )
+        );
+
+        send(payload, comment.getTask().getProject().getSlackWebhookUrl());
+    }
+
+    //Project Updated
+
+    public void notifyProjectUpdated(Project project) {
+        if (project.getSlackWebhookUrl() == null || project.getSlackWebhookUrl().isBlank()) return;
+
+        String creator   = project.getCreatedBy()   != null ? project.getCreatedBy().getUsername()  : "Unknown";
+        String desc      = project.getDescription() != null && !project.getDescription().isBlank()
+                           ? project.getDescription() : "No description";
+        String startDate = project.getStartDate() != null ? project.getStartDate().toString() : "N/A";
+        String endDate   = project.getEndDate()   != null ? project.getEndDate().toString()   : "N/A";
+
+        String payload = attachment(
+            "#f59e0b",
+            "Project Updated",
+            e(desc),
+            e(project.getName()),
+            fields(
+                field("Updated By",  e(creator),   true),
+                field("Start Date",  e(startDate), true),
+                field("End Date",    e(endDate),   true)
+            )
+        );
+
+        send(payload, project.getSlackWebhookUrl());
+    }
+
     //Project Created
 
     public void notifyProjectCreated(Project project) {

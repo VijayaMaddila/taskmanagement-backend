@@ -8,9 +8,9 @@ import com.taskmanagement.repository.CommentRepository;
 import com.taskmanagement.repository.TaskRepository;
 import com.taskmanagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class CommentService {
@@ -24,6 +24,9 @@ public class CommentService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private SlackService slackService;
+
     public Comment addComment(CommentDto dto) {
         Task task = taskRepository.findById(dto.getTaskId())
                 .orElseThrow(() -> new RuntimeException("Task not found: " + dto.getTaskId()));
@@ -34,24 +37,29 @@ public class CommentService {
         comment.setContent(dto.getContent());
         comment.setTask(task);
         comment.setUser(user);
-        return commentRepository.save(comment);
+        Comment saved = commentRepository.save(comment);
+        slackService.notifyCommentAdded(saved);
+        return saved;
     }
 
-    public List<Comment> getCommentsByTask(Long taskId) {
-        return commentRepository.findByTaskIdOrderByCreatedAtAsc(taskId);
+    public Page<Comment> getCommentsByTask(Long taskId, int page, int size) {
+        return commentRepository.findByTaskIdOrderByCreatedAtAsc(taskId, PageRequest.of(page, size));
     }
 
     public Comment updateComment(Long id, String content) {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Comment not found: " + id));
+        String oldContent = comment.getContent();
         comment.setContent(content);
-        return commentRepository.save(comment);
+        Comment updated = commentRepository.save(comment);
+        slackService.notifyCommentUpdated(updated, oldContent);
+        return updated;
     }
 
     public void deleteComment(Long id) {
-        commentRepository.delete(
-                commentRepository.findById(id)
-                        .orElseThrow(() -> new RuntimeException("Comment not found: " + id))
-        );
+        Comment comment = commentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Comment not found: " + id));
+        slackService.notifyCommentDeleted(comment);
+        commentRepository.delete(comment);
     }
 }

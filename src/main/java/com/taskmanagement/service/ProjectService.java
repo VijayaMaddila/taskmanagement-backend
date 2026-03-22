@@ -29,6 +29,9 @@ public class ProjectService {
     private TeamRepository teamRepository;
 
     @Autowired
+    private TeamMemberRepository teamMemberRepository;
+
+    @Autowired
     private SlackService slackService;
 
     public Project createProject(ProjectDto dto) {
@@ -37,24 +40,25 @@ public class ProjectService {
         Project saved = projectRepository.save(project);
         slackService.notifyProjectCreated(saved);
 
-        
-        if (dto.getCreatedById() != null) {
+        Team team = saved.getTeam();
+
+        // Add creator as ADMIN member of the team
+        if (dto.getCreatedById() != null && team != null) {
             User creator = userRepository.findById(dto.getCreatedById()).orElse(null);
             if (creator != null) {
-                Team creatorTeam = new Team();
-                creatorTeam.setProject(saved);
-                creatorTeam.setUser(creator);
-                creatorTeam.setRole(Team.TeamRole.ADMIN);
-                teamRepository.save(creatorTeam);
+                TeamMember creatorMember = new TeamMember();
+                creatorMember.setTeam(team);
+                creatorMember.setUser(creator);
+                creatorMember.setRole(Team.TeamRole.ADMIN);
+                teamMemberRepository.save(creatorMember);
             }
         }
 
-        // invite members
-        if (dto.getMembers() != null) {
+        // Invite members
+        if (dto.getMembers() != null && team != null) {
             for (ProjectDto.MemberInvite invite : dto.getMembers()) {
                 Team.TeamRole role = invite.getRole() != null ? invite.getRole() : Team.TeamRole.DEVELOPER;
 
-            
                 User user = null;
                 if (invite.getUserId() != null) {
                     user = userRepository.findById(invite.getUserId()).orElse(null);
@@ -63,18 +67,18 @@ public class ProjectService {
                 }
 
                 if (user != null) {
-                    Team team = new Team();
-                    team.setProject(saved);
-                    team.setUser(user);
-                    team.setRole(role);
-                    teamRepository.save(team);
-
+                    TeamMember member = new TeamMember();
+                    member.setTeam(team);
+                    member.setUser(user);
+                    member.setRole(role);
+                    teamMemberRepository.save(member);
                 } else {
                     String email = invite.getEmail();
                     if (email != null) {
                         ProjectInvite pending = new ProjectInvite();
                         pending.setProject(saved);
                         pending.setEmail(email);
+                        pending.setName(invite.getName());
                         pending.setRole(role);
                         pending.setToken(UUID.randomUUID().toString());
                         projectInviteRepository.save(pending);
@@ -104,7 +108,9 @@ public class ProjectService {
     public Project updateProject(Long id, ProjectDto dto) {
         Project project = getProjectById(id);
         mapDtoToProject(dto, project);
-        return projectRepository.save(project);
+        Project updated = projectRepository.save(project);
+        slackService.notifyProjectUpdated(updated);
+        return updated;
     }
 
     public void deleteProject(Long id) {
@@ -125,6 +131,12 @@ public class ProjectService {
             User creator = userRepository.findById(dto.getCreatedById())
                     .orElseThrow(() -> new RuntimeException("User not found: " + dto.getCreatedById()));
             project.setCreatedBy(creator);
+        }
+
+        if (dto.getTeamId() != null) {
+            Team team = teamRepository.findById(dto.getTeamId())
+                    .orElseThrow(() -> new RuntimeException("Team not found: " + dto.getTeamId()));
+            project.setTeam(team);
         }
     }
 }

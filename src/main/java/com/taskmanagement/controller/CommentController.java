@@ -4,10 +4,10 @@ import com.taskmanagement.dto.CommentDto;
 import com.taskmanagement.model.Comment;
 import com.taskmanagement.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -23,8 +23,11 @@ public class CommentController {
         return ResponseEntity.ok(commentService.addComment(dto));
     }
     @GetMapping("/task/{taskId}")
-    public ResponseEntity<List<Comment>> getCommentsByTask(@PathVariable Long taskId) {
-        return ResponseEntity.ok(commentService.getCommentsByTask(taskId));
+    public ResponseEntity<Page<Comment>> getCommentsByTask(
+            @PathVariable Long taskId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(commentService.getCommentsByTask(taskId, page, size));
     }
 
     @PutMapping("/{id}")

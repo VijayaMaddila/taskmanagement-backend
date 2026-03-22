@@ -2,8 +2,12 @@ package com.taskmanagement.controller;
 
 import com.taskmanagement.dto.ProjectDto;
 import com.taskmanagement.model.Project;
+import com.taskmanagement.model.Task;
+import com.taskmanagement.model.TeamMember;
 import com.taskmanagement.service.ProjectService;
 import com.taskmanagement.service.SlackService;
+import com.taskmanagement.service.TaskService;
+import com.taskmanagement.service.TeamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +25,12 @@ public class ProjectController {
 
     @Autowired
     private SlackService slackService;
+
+    @Autowired
+    private TaskService taskService;
+
+    @Autowired
+    private TeamService teamService;
 
     @PostMapping
     public ResponseEntity<Project> createProject(@RequestBody ProjectDto dto) {
@@ -48,6 +58,22 @@ public class ProjectController {
     public ResponseEntity<String> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         return ResponseEntity.ok("Project deleted successfully");
+    }
+
+    @GetMapping("/{id}/tasks")
+    public ResponseEntity<Page<Task>> getTasksByProject(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(taskService.getTasksByProject(id, page, size));
+    }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<Page<TeamMember>> getMembersByProject(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(teamService.getMembersByProject(id, page, size));
     }
 
     @GetMapping("/{id}/slack-members")

@@ -59,7 +59,7 @@ public class User {
     @JsonIgnore
     private List<Project> projects = new ArrayList<>();
 
-    private boolean is_deleted = false;
+    private Boolean is_deleted = false;
 
     public User() {}
 
@@ -113,11 +113,11 @@ public class User {
         this.projects = projects;
     }
 
-    public boolean isIs_deleted() {
-        return is_deleted;
+    public Boolean isIs_deleted() {
+        return is_deleted != null && is_deleted;
     }
 
-    public void setIs_deleted(boolean is_deleted) {
+    public void setIs_deleted(Boolean is_deleted) {
         this.is_deleted = is_deleted;
     }
 
