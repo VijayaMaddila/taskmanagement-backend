@@ -17,13 +17,13 @@ public class ProfileController {
     @Autowired
     private UserService userService;
 
-    // GET /api/profile - get current user's profile
+    //get current user's profile
     @GetMapping
     public ResponseEntity<User> getProfile(@AuthenticationPrincipal String email) {
         return ResponseEntity.ok(userService.getProfile(email));
     }
 
-    // PUT /api/profile - update username and email
+    //update username and email
     @PutMapping
     public ResponseEntity<User> updateProfile(
             @AuthenticationPrincipal String email,
@@ -31,7 +31,7 @@ public class ProfileController {
         return ResponseEntity.ok(userService.updateProfile(email, dto));
     }
 
-    // PUT /api/profile/change-password - change password
+    // change-password 
     @PutMapping("/change-password")
     public ResponseEntity<String> changePassword(
             @AuthenticationPrincipal String email,

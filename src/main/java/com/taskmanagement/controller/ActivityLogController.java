@@ -21,7 +21,7 @@ public class ActivityLogController {
     @GetMapping
     public ResponseEntity<Page<ActivityLog>> getAllLogs(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(activityLogService.getAllLogs(page, size));
     }
 
@@ -30,7 +30,7 @@ public class ActivityLogController {
     public ResponseEntity<Page<ActivityLog>> getLogsByUser(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(activityLogService.getLogsByUser(userId, page, size));
     }
 
@@ -49,7 +49,7 @@ public class ActivityLogController {
     public ResponseEntity<Page<ActivityLog>> getStatusHistoryByTask(
             @PathVariable Long taskId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(activityLogService.getStatusHistoryByTask(taskId, page, size));
     }
 
